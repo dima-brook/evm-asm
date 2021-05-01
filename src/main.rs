@@ -1,5 +1,6 @@
 mod errors;
 
+use clap::clap_app;
 use errors::DisasmError;
 use num_bigint::BigUint;
 use rsevmasm::{Disassembly, Instruction};
@@ -24,6 +25,19 @@ pub fn disassemble_evm(hex_data: &[u8]) -> Result<(), rsevmasm::DisassemblyError
 
 fn main() -> Result<(), DisasmError> {
 
+    let args = clap_app!(app => 
+        (version: "0.1")
+        (author: "xpdiem")
+        (about: "EVM Disassembly PoC")
+        (@arg input: -x --hex +required +takes_value "Byte Code Hex String")
+        (@arg decompile: -d --decompile "Decompile Input Hex")
+    ).get_matches();
+
+    let hex = args.value_of("input").unwrap();
+    let hex_bytes = hex::decode(hex)?;
+    if args.is_present("decompile") {
+        disassemble_evm(&hex_bytes)?;
+    }
 
     Ok(())
 }
