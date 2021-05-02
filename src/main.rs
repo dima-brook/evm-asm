@@ -2,6 +2,7 @@ mod errors;
 
 use clap::clap_app;
 use errors::DisasmError;
+use move_binary_format::file_format::CompiledScript;
 use num_bigint::BigUint;
 use rsevmasm::{Disassembly, Instruction};
 
@@ -23,6 +24,15 @@ pub fn disassemble_evm(hex_data: &[u8]) -> Result<(), rsevmasm::DisassemblyError
     Ok(())
 }
 
+pub fn disassemble_move(hex_data: &[u8]) -> Result<(), move_binary_format::errors::PartialVMError> {
+    let script = CompiledScript::deserialize(hex_data)?;
+    for instruction in script.into_inner().code.code {
+        println!("{:?}", instruction);
+    }
+
+    Ok(())
+}
+
 fn main() -> Result<(), DisasmError> {
 
     let args = clap_app!(app => 
@@ -31,12 +41,16 @@ fn main() -> Result<(), DisasmError> {
         (about: "EVM Disassembly PoC")
         (@arg input: -x --hex +required +takes_value "Byte Code Hex String")
         (@arg decompile: -d --decompile "Decompile Input Hex")
+        (@arg decompile_evm: conflicts_with[decompile_move] -e --evm "Decompile Input Hex as EVM")
+        (@arg decompile_move: -m --move "Decompile Input Hex as MoveVM")
     ).get_matches();
 
     let hex = args.value_of("input").unwrap();
     let hex_bytes = hex::decode(hex)?;
-    if args.is_present("decompile") {
+    if args.is_present("decompile_evm") {
         disassemble_evm(&hex_bytes)?;
+    }else if args.is_present("decompile_move") {
+        disassemble_move(&hex_bytes)?;
     }
 
     Ok(())
