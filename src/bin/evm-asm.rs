@@ -1,8 +1,6 @@
-mod errors;
-mod lib;
-
 use clap::clap_app;
-use errors::DisasmError;
+use evm_asm::errors::DisasmError;
+use evm_asm::MoveCode;
 use move_binary_format::file_format::*;
 use num_bigint::BigUint;
 use rsevmasm::{Disassembly, Instruction};
@@ -35,7 +33,7 @@ pub fn disassemble_move(
         .into_iter()
         .map(|d| CompiledModule::deserialize(&d))
         .collect();
-    let code = lib::MoveCode::new(script, modules?);
+    let code = MoveCode::new(script, modules?);
     code.decompile();
     Ok(())
 }

@@ -14,3 +14,6 @@ move-core-types = { git = "https://github.com/xp-network/diem", branch = "main" 
 num-bigint = "0.4"
 rsevmasm = "0.5"
 thiserror = "1.0"
+
+[[bin]]
+name = "evm-asm"
