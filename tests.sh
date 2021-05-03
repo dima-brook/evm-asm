@@ -11,4 +11,4 @@ echo "Large Test EVM"
 echo ""
 
 echo "Move Test"
-./target/debug/evm-asm -f data/f.mv -m
+./target/debug/evm-asm -f data/compiled/f.mv -m data/compiled/Coin.mv -v
