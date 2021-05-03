@@ -72,10 +72,13 @@ impl MoveCode {
 
     pub fn decompile(self) {
         let mut calls: Vec<FunctionHandleIndex> = Vec::new();
+        let mut structs: HashMap<&str, HashMap<StructDefinitionIndex, &StructDefinition>> =
+            HashMap::new();
         for instruction in &self.script.code.code {
             match instruction {
                 Bytecode::Call(idx) => {
                     calls.push(*idx);
+                    println!("Call({})", idx);
                 }
                 c => println!("{:?}", c),
             }
@@ -84,14 +87,44 @@ impl MoveCode {
         println!("\nCall Data\n");
         for call in calls {
             let funh = self.fn_handle(call);
+            let moduleh = self.module_handle(funh.module);
+            let modnm = self.identifier_resolve(moduleh.name).as_str();
+            let module = &self.modules[moduleh];
             let code = self.resolve_call(call);
             let name = self.identifier_resolve(funh.name).as_str();
 
             println!("{} - {}:", call, name);
             for instr in &code.unwrap().code {
+                match instr {
+                    Bytecode::Pack(i)
+                    | Bytecode::Unpack(i)
+                    | Bytecode::MutBorrowGlobal(i)
+                    | Bytecode::ImmBorrowGlobal(i)
+                    | Bytecode::Exists(i)
+                    | Bytecode::MoveFrom(i)
+                    | Bytecode::MoveTo(i) => {
+                        let v = if let Some(v) = structs.get_mut(modnm) {
+                            v
+                        } else {
+                            structs.insert(modnm, HashMap::new());
+                            structs.get_mut(modnm).unwrap()
+                        };
+                        v.insert(*i, &module.struct_defs[i.0 as usize]);
+                    }
+                    _ => (),
+                }
                 println!("  {:?}", instr);
             }
             println!("")
+        }
+
+        println!("\nModule Data\n");
+        for (module, structs) in structs.into_iter() {
+            println!("{}:", module);
+            for (i, s) in structs.into_iter() {
+                println!("  {}:", i);
+                println!("      {:?}", s.field_information);
+            }
         }
     }
 }
