@@ -62,7 +62,7 @@ impl MoveCode {
         &self.script.function_handles[idx.0 as usize]
     }
 
-    fn resolve_call(&self, idx: FunctionHandleIndex) -> Option<&CodeUnit> {
+    fn resolve_call(&self, idx: FunctionHandleIndex) -> Result<&CodeUnit, errors::MoveError> {
         let funh = self.fn_handle(idx);
         let module = &self.modules[self.module_handle(funh.module)];
         let name = self.identifier_resolve(funh.name).as_str();
@@ -70,13 +70,18 @@ impl MoveCode {
             let ffh = &module.function_handles[function.function.0 as usize];
             let fname = module.identifiers[ffh.name.0 as usize].as_str();
             if fname == name {
-                return function.code.as_ref();
+                let fc = function.code.as_ref();
+                return fc.ok_or(errors::MoveError::InvalidModule);
             }
         }
-        panic!("Failed to find function! Incorrect module");
+        Err(errors::MoveError::ModuleMissing)
     }
 
-    pub fn disassemble(self) {
+    pub fn disassemble_script(self) -> CodeUnit {
+        self.script.code
+    }
+
+    pub fn disassemble_with_mods(self) -> Result<(), errors::MoveError> {
         let mut calls: Vec<FunctionHandleIndex> = Vec::new();
         let mut structs: HashMap<&str, HashMap<StructDefinitionIndex, &StructDefinition>> =
             HashMap::new();
@@ -96,11 +101,11 @@ impl MoveCode {
             let moduleh = self.module_handle(funh.module);
             let modnm = self.identifier_resolve(moduleh.name).as_str();
             let module = &self.modules[moduleh];
-            let code = self.resolve_call(call);
+            let code = self.resolve_call(call)?;
             let name = self.identifier_resolve(funh.name).as_str();
 
             println!("{} - {}:", call, name);
-            for instr in &code.unwrap().code {
+            for instr in &code.code {
                 match instr {
                     Bytecode::Pack(i)
                     | Bytecode::Unpack(i)
@@ -132,5 +137,7 @@ impl MoveCode {
                 println!("      {:?}", s.field_information);
             }
         }
+
+        Ok(())
     }
 }

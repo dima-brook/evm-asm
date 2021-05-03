@@ -22,5 +22,5 @@ fn move_test() {
 
     let movc = helpers::move_code_from_modfs(&fs::read("./data/compiled/f.mv").unwrap(), vec!["./data/compiled/Coin.mv"]);
     assert!(movc.is_ok());
-    movc.unwrap().disassemble();
+    assert!(movc.unwrap().disassemble_with_mods().is_ok());
 }
