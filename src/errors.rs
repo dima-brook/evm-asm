@@ -11,5 +11,7 @@ pub enum DisasmError {
     #[error("{0}")]
     Hex(#[from] FromHexError),
     #[error("{0}")]
-    Move(#[from] PartialVMError)
+    Move(#[from] PartialVMError),
+    #[error("{0}")]
+    IO(#[from] std::io::Error)
 }
