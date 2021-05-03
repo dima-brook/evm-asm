@@ -1,6 +1,9 @@
 pub mod errors;
 pub mod helpers;
 
+#[cfg(test)]
+mod tests;
+
 use move_binary_format::file_format::*;
 use move_core_types::identifier::*;
 use std::collections::HashMap;

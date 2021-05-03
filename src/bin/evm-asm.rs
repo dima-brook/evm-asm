@@ -20,10 +20,7 @@ fn main() -> Result<(), DisasmError> {
     if let Some(fname) = args.value_of("file") {
         hex_bytes = fs::read(fname)?;
     } else {
-        let mut hexs = args.value_of("input").unwrap().to_string();
-        hexs[0..2].make_ascii_lowercase();
-        let h = hexs.strip_prefix("0x").unwrap_or(&hexs);
-        hex_bytes = hex::decode(h)?;
+        hex_bytes = helpers::bytes_from_hex(args.value_of("input").unwrap())?;
     }
 
     if args.is_present("decompile_evm") {

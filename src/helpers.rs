@@ -34,3 +34,10 @@ pub fn disassemble_evm(hex_data: &[u8]) -> Result<(), rsevmasm::DisassemblyError
 
     Ok(())
 }
+
+pub fn bytes_from_hex<S: std::fmt::Display>(hex: S) -> Result<Vec<u8>, DisasmError> {
+    let mut hexs = hex.to_string();
+    hexs[0..2].make_ascii_lowercase();
+    let h = hexs.strip_prefix("0x").unwrap_or(&hexs);
+    hex::decode(h).map_err(|e| e.into())
+}
