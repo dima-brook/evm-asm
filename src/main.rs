@@ -1,12 +1,12 @@
 mod errors;
+mod lib;
 
 use clap::clap_app;
 use errors::DisasmError;
-use move_binary_format::file_format::CompiledScript;
+use move_binary_format::file_format::*;
 use num_bigint::BigUint;
 use rsevmasm::{Disassembly, Instruction};
-use std::fs::File;
-use std::io::prelude::*;
+use std::fs;
 
 pub fn disassemble_evm(hex_data: &[u8]) -> Result<(), rsevmasm::DisassemblyError> {
     for (addr, instruction) in Disassembly::from_bytes(hex_data)?.instructions.iter() {
@@ -26,12 +26,11 @@ pub fn disassemble_evm(hex_data: &[u8]) -> Result<(), rsevmasm::DisassemblyError
     Ok(())
 }
 
-pub fn disassemble_move(hex_data: &[u8]) -> Result<(), move_binary_format::errors::PartialVMError> {
+pub fn disassemble_move(hex_data: &[u8], module_data: &[Vec<u8>]) -> Result<(), move_binary_format::errors::PartialVMError> {
     let script = CompiledScript::deserialize(hex_data)?;
-    for instruction in script.into_inner().code.code {
-        println!("{:?}", instruction);
-    }
-
+    let modules: Result<Vec<_>, _> = module_data.into_iter().map(|d| CompiledModule::deserialize(&d)).collect();
+    let code = lib::MoveCode::new(script, modules?);
+    code.decompile();
     Ok(())
 }
 
@@ -41,28 +40,32 @@ fn main() -> Result<(), DisasmError> {
         (author: "xpdiem")
         (about: "EVM Disassembly PoC")
         (@arg file: -f --file conflicts_with[input] +takes_value "Byte Code File" )
+        (@arg modules: -m --modules +takes_value "Module file")
         (@arg input: -x --hex +takes_value "Byte Code Hex String")
-        (@arg decompile: -d --decompile "Decompile Input Hex")
         (@arg decompile_evm: conflicts_with[decompile_move] -e --evm "Decompile Input Hex as EVM")
-        (@arg decompile_move: -m --move "Decompile Input Hex as MoveVM")
+        (@arg decompile_move: -v --move "Decompile Input Hex as MoveVM")
     )
     .get_matches();
 
-    let mut hex_bytes: Vec<u8>;
+    let hex_bytes: Vec<u8>;
     if let Some(fname) = args.value_of("file") {
-        let mut f = File::open(fname)?;
-        hex_bytes = Vec::new();
-        f.read_to_end(&mut hex_bytes)?;
+        hex_bytes = fs::read(fname)?;
     } else {
         let mut hexs = args.value_of("input").unwrap().to_string();
         hexs[0..2].make_ascii_lowercase();
         let h = hexs.strip_prefix("0x").unwrap_or(&hexs);
         hex_bytes = hex::decode(h)?;
     }
+
     if args.is_present("decompile_evm") {
         disassemble_evm(&hex_bytes)?;
     } else if args.is_present("decompile_move") {
-        disassemble_move(&hex_bytes)?;
+        let mut module_hexs: Vec<Vec<u8>> = Vec::new();
+        let modulesf = args.values_of("modules").unwrap();
+        for modulef in modulesf {
+            module_hexs.push(fs::read(modulef)?);
+        }
+        disassemble_move(&hex_bytes, module_hexs.as_slice())?;
     }
 
     Ok(())

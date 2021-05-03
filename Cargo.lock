@@ -371,6 +371,7 @@ dependencies = [
  "clap",
  "hex",
  "move-binary-format",
+ "move-core-types",
  "num-bigint",
  "rsevmasm",
  "thiserror",
