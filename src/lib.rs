@@ -1,4 +1,5 @@
 pub mod errors;
+pub mod helpers;
 
 use move_binary_format::file_format::*;
 use move_core_types::identifier::*;
@@ -72,7 +73,7 @@ impl MoveCode {
         panic!("Failed to find function! Incorrect module");
     }
 
-    pub fn decompile(self) {
+    pub fn disassemble(self) {
         let mut calls: Vec<FunctionHandleIndex> = Vec::new();
         let mut structs: HashMap<&str, HashMap<StructDefinitionIndex, &StructDefinition>> =
             HashMap::new();

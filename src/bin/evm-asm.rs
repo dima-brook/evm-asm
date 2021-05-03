@@ -1,42 +1,7 @@
 use clap::clap_app;
 use evm_asm::errors::DisasmError;
-use evm_asm::MoveCode;
-use move_binary_format::file_format::*;
-use num_bigint::BigUint;
-use rsevmasm::{Disassembly, Instruction};
+use evm_asm::helpers;
 use std::fs;
-
-pub fn disassemble_evm(hex_data: &[u8]) -> Result<(), rsevmasm::DisassemblyError> {
-    for (addr, instruction) in Disassembly::from_bytes(hex_data)?.instructions.iter() {
-        match instruction {
-            Instruction::Push(arg) => println!(
-                "{:#x} PUSH {:#x}",
-                addr,
-                BigUint::from_bytes_be(arg.as_slice())
-            ),
-            Instruction::Dup(arg) => println!("{:#x} DUP {:#x}", addr, arg),
-            Instruction::Swap(arg) => println!("{:#x} SWAP {:#x}", addr, arg),
-            Instruction::Log(arg) => println!("{:#x} LOG {:#x}", addr, arg),
-            i => println!("{:#x} {}", addr, format!("{:?}", i).to_uppercase()),
-        }
-    }
-
-    Ok(())
-}
-
-pub fn disassemble_move(
-    hex_data: &[u8],
-    module_data: &[Vec<u8>],
-) -> Result<(), move_binary_format::errors::PartialVMError> {
-    let script = CompiledScript::deserialize(hex_data)?;
-    let modules: Result<Vec<_>, _> = module_data
-        .into_iter()
-        .map(|d| CompiledModule::deserialize(&d))
-        .collect();
-    let code = MoveCode::new(script, modules?);
-    code.decompile();
-    Ok(())
-}
 
 fn main() -> Result<(), DisasmError> {
     let args = clap_app!(app =>
@@ -62,14 +27,10 @@ fn main() -> Result<(), DisasmError> {
     }
 
     if args.is_present("decompile_evm") {
-        disassemble_evm(&hex_bytes)?;
+        helpers::disassemble_evm(&hex_bytes)?;
     } else if args.is_present("decompile_move") {
-        let mut module_hexs: Vec<Vec<u8>> = Vec::new();
-        let modulesf = args.values_of("modules").unwrap();
-        for modulef in modulesf {
-            module_hexs.push(fs::read(modulef)?);
-        }
-        disassemble_move(&hex_bytes, module_hexs.as_slice())?;
+       let movec = helpers::move_code_from_modfs(&hex_bytes, args.values_of("modules").unwrap().into_iter())?;
+       movec.disassemble();
     }
 
     Ok(())
