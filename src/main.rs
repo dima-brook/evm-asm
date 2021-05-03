@@ -26,9 +26,15 @@ pub fn disassemble_evm(hex_data: &[u8]) -> Result<(), rsevmasm::DisassemblyError
     Ok(())
 }
 
-pub fn disassemble_move(hex_data: &[u8], module_data: &[Vec<u8>]) -> Result<(), move_binary_format::errors::PartialVMError> {
+pub fn disassemble_move(
+    hex_data: &[u8],
+    module_data: &[Vec<u8>],
+) -> Result<(), move_binary_format::errors::PartialVMError> {
     let script = CompiledScript::deserialize(hex_data)?;
-    let modules: Result<Vec<_>, _> = module_data.into_iter().map(|d| CompiledModule::deserialize(&d)).collect();
+    let modules: Result<Vec<_>, _> = module_data
+        .into_iter()
+        .map(|d| CompiledModule::deserialize(&d))
+        .collect();
     let code = lib::MoveCode::new(script, modules?);
     code.decompile();
     Ok(())
