@@ -50,19 +50,19 @@ impl MoveCode {
         Self { script, modules }
     }
 
-    fn module_handle(&self, idx: ModuleHandleIndex) -> &ModuleHandle {
+    pub fn module_handle(&self, idx: ModuleHandleIndex) -> &ModuleHandle {
         &self.script.module_handles[idx.0 as usize]
     }
 
-    fn identifier_resolve(&self, idx: IdentifierIndex) -> &Identifier {
+    pub fn identifier_resolve(&self, idx: IdentifierIndex) -> &Identifier {
         &self.script.identifiers[idx.0 as usize]
     }
 
-    fn fn_handle(&self, idx: FunctionHandleIndex) -> &FunctionHandle {
+    pub fn fn_handle(&self, idx: FunctionHandleIndex) -> &FunctionHandle {
         &self.script.function_handles[idx.0 as usize]
     }
 
-    fn resolve_call(&self, idx: FunctionHandleIndex) -> Result<&CodeUnit, errors::MoveError> {
+    pub fn resolve_call(&self, idx: FunctionHandleIndex) -> Result<&CodeUnit, errors::MoveError> {
         let funh = self.fn_handle(idx);
         let module = &self.modules[self.module_handle(funh.module)];
         let name = self.identifier_resolve(funh.name).as_str();
@@ -75,6 +75,10 @@ impl MoveCode {
             }
         }
         Err(errors::MoveError::ModuleMissing)
+    }
+
+    pub fn resolve_const(&self, idx: ConstantPoolIndex) -> &Constant {
+        &self.script.constant_pool[idx.0 as usize]
     }
 
     pub fn disassemble_script(self) -> CodeUnit {
