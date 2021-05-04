@@ -32,7 +32,7 @@ fn module_resoulution(
 }
 
 pub struct MoveCode {
-    script: CompiledScriptMut,
+    pub script: CompiledScriptMut,
     modules: HashMap<ModuleHandle, CompiledModuleMut>,
 }
 
