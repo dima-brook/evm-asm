@@ -26,8 +26,11 @@ fn main() -> Result<(), DisasmError> {
     if args.is_present("decompile_evm") {
         helpers::disassemble_evm(&hex_bytes)?;
     } else if args.is_present("decompile_move") {
-       let movec = helpers::move_code_from_modfs(&hex_bytes, args.values_of("modules").unwrap().into_iter())?;
-       movec.disassemble_with_mods()?;
+        let movec = helpers::move_code_from_modfs(
+            &hex_bytes,
+            args.values_of("modules").unwrap().into_iter(),
+        )?;
+        movec.disassemble_with_mods()?;
     }
 
     Ok(())

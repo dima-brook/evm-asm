@@ -10,7 +10,7 @@ pub enum MoveError {
     #[error("Missing a Module.")]
     ModuleMissing,
     #[error("Module doesn't have code info")]
-    InvalidModule
+    InvalidModule,
 }
 
 #[derive(Error, Debug)]

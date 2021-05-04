@@ -5,7 +5,7 @@ pub mod helpers;
 mod tests;
 
 use move_binary_format::file_format::*;
-use move_core_types::{value::*, identifier::*};
+use move_core_types::{identifier::*, value::*};
 use std::collections::HashMap;
 
 fn module_resoulution(
@@ -53,7 +53,7 @@ impl MoveCode {
     pub fn new_no_mods(script: CompiledScript) -> Self {
         Self {
             script: script.into_inner(),
-            modules: HashMap::new()
+            modules: HashMap::new(),
         }
     }
 
@@ -91,18 +91,18 @@ impl MoveCode {
     pub fn const_to_vec8(&self, c: Constant) -> Option<Vec<u8>> {
         let mv = c.deserialize_constant()?;
         match mv {
-            MoveValue::Vector(v) => {
-                match v.get(0) {
-                    Some(MoveValue::U8(_)) => {
-                        Some(v.into_iter().map(|u| match u {
+            MoveValue::Vector(v) => match v.get(0) {
+                Some(MoveValue::U8(_)) => Some(
+                    v.into_iter()
+                        .map(|u| match u {
                             MoveValue::U8(r) => r,
-                            _ => unreachable!()
-                        }).collect())
-                    }
-                    _ => None
-                }
-            }
-            _ => None
+                            _ => unreachable!(),
+                        })
+                        .collect(),
+                ),
+                _ => None,
+            },
+            _ => None,
         }
     }
 

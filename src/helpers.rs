@@ -1,16 +1,20 @@
-use crate::MoveCode;
 use crate::errors::{DisasmError, MoveError};
-use std::{fs, path::Path};
+use crate::MoveCode;
 use move_binary_format::file_format::*;
 use num_bigint::BigUint;
 use rsevmasm::{Disassembly, Instruction};
+use std::{fs, path::Path};
 
-pub fn move_code_from_modfs<P: AsRef<Path>, I: IntoIterator<Item = P>>(script: &[u8], modules: I) -> Result<MoveCode, DisasmError> {
+pub fn move_code_from_modfs<P: AsRef<Path>, I: IntoIterator<Item = P>>(
+    script: &[u8],
+    modules: I,
+) -> Result<MoveCode, DisasmError> {
     let script = CompiledScript::deserialize(script).map_err(|e| -> MoveError { e.into() })?;
 
     let mut comp_mods: Vec<CompiledModule> = Vec::new();
     for modulef in modules {
-        let comp = CompiledModule::deserialize(&fs::read(modulef)?).map_err(|e| -> MoveError { e.into() })?;
+        let comp = CompiledModule::deserialize(&fs::read(modulef)?)
+            .map_err(|e| -> MoveError { e.into() })?;
         comp_mods.push(comp);
     }
 
