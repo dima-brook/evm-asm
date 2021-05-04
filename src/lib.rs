@@ -50,6 +50,13 @@ impl MoveCode {
         Self { script, modules }
     }
 
+    pub fn new_no_mods(script: CompiledScript) -> Self {
+        Self {
+            script: script.into_inner(),
+            modules: HashMap::new()
+        }
+    }
+
     pub fn module_handle(&self, idx: ModuleHandleIndex) -> &ModuleHandle {
         &self.script.module_handles[idx.0 as usize]
     }
