@@ -45,3 +45,61 @@ pub fn bytes_from_hex<S: Into<String>>(hex: S) -> Result<Vec<u8>, DisasmError> {
     let h = hexs.strip_prefix("0x").unwrap_or(&hexs);
     hex::decode(h).map_err(|e| e.into())
 }
+
+enum RecompileRes {
+    Done,
+    Call(FunctionHandleIndex)
+}
+
+fn mv_evm_instruction_recompile(ins: &Bytecode, res: &mut Vec<rsevmasm::Instruction>) -> RecompileRes {
+    match ins {
+        Bytecode::LdU64(val) => {
+            let lz = val.leading_zeros() as usize/8;
+            res.push(Instruction::Push(val.to_be_bytes()[lz..8].to_vec()));
+        },
+        Bytecode::Call(idx) => {
+            res.push(Instruction::Push(vec![0]));
+            res.push(Instruction::MStore);
+            return RecompileRes::Call(*idx);
+        },
+        Bytecode::MoveLoc(idx) | Bytecode::CopyLoc(idx) => {
+            res.push(Instruction::Push(vec![*idx as u8]));
+            res.push(Instruction::MLoad);
+        }
+        Bytecode::StLoc(idx) => {
+            res.push(Instruction::Push(vec![*idx as u8]));
+            res.push(Instruction::MStore);
+        },
+        Bytecode::Pop => {
+            res.push(Instruction::Pop)
+        },
+        Bytecode::Pack(_) => {
+            res.push(Instruction::Push(vec![0]));
+            res.push(Instruction::MLoad);
+        },
+        Bytecode::Unpack(_) => (), // Structs are stored untyped on the stack
+        Bytecode::Ret => (),
+        _ => unimplemented!()
+    }
+
+    return RecompileRes::Done;
+}
+
+/// POC Move Recompiler
+/// Not Safe for production yet!
+pub fn move_recompile_to_evm(move_s: &MoveCode) -> Vec<rsevmasm::Instruction> {
+    let mut res = vec![rsevmasm::Instruction::Dup(0x1)];
+
+    for instruction in &move_s.script.code.code {
+        if let RecompileRes::Call(idx) = mv_evm_instruction_recompile(&instruction, &mut res) {
+            let c = move_s.resolve_call(idx).unwrap();
+            for ins in &c.code {
+                mv_evm_instruction_recompile(ins, &mut res);
+            }
+        }
+    }
+
+    res.push(rsevmasm::Instruction::Stop);
+
+    return res;
+}
